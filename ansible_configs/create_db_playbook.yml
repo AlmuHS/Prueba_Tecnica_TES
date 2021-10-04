@@ -1,0 +1,49 @@
+- name: Configure mysql
+  hosts: database
+  gather_facts: no
+  become: yes
+
+  tasks:
+
+    - name: copy sql file
+      ansible.builtin.copy:
+        src: ./test_db.sql
+        dest: /tmp/test_db.sql
+
+    - name: Allow external access to mariadb
+      shell: echo "bind_address = 0.0.0.0" >> /etc/mysql/mariadb.conf.d/50-server.cnf
+      args:
+        executable: /bin/bash
+
+    - name: create database "test_db"
+      mysql_db:
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+        name: test_db
+        state: present
+      
+    - name: import database from file
+      mysql_db:
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+        name: test_db
+        state: import
+        target: /tmp/test_db.sql
+
+    - name: create user for webserver1
+      community.mysql.mysql_user:
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+        name: user1
+        password: test1
+        priv:
+          'test_db.*': 'SELECT,GRANT'
+        host: "{{ hostvars[groups['gcp_instances'][0]].webserver1_internal_address }}"
+        state: present
+        
+    - name: create user for webserver2
+      community.mysql.mysql_user:
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+        name: user2
+        password: test2
+        priv:
+          'test_db.*': 'SELECT,GRANT'
+        host: "{{ hostvars[groups['gcp_instances'][0]].webserver2_internal_address }}"
+        state: present

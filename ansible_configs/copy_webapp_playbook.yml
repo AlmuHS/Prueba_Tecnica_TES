@@ -1,0 +1,21 @@
+- name: Copy web application to webserver1
+  hosts: webserver1
+  gather_facts: no
+  become: yes
+
+  tasks:
+    - name: copy php file
+      ansible.builtin.copy:
+        src: ./connectmysql1.php
+        dest: /var/www/html/index.php
+        
+- name: Copy web application to webserver2
+  hosts: webserver2
+  gather_facts: no
+  become: yes
+
+  tasks:
+    - name: copy php file
+      ansible.builtin.copy:
+        src: ./connectmysql2.php
+        dest: /var/www/html/index.php
